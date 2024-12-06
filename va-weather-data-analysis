@@ -11,7 +11,7 @@ plt.figure().clear()
 plt.clf()
 plt.close('all')
 
-# plot min and max temps over time
+# visualize min and max temps over time
 weather_data_cleaned = weather_data_cleaned.sort_values('DATE')
 plt.figure(figsize=(12, 6))
 plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['TMAX'], label='Max Temperature (TMAX)', color='red', alpha=0.7)
@@ -22,7 +22,7 @@ plt.ylabel('Temperature (°F)')
 plt.legend()
 plt.show()
 
-# plot precipitation levels over time
+# visualize precipitation levels over time
 plt.figure(figsize=(12, 6))
 plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['PRCP'], label='Precipitation (PRCP)', color='green', alpha=0.7)
 plt.title('Daily Precipitation Levels Over Time')
@@ -39,3 +39,47 @@ monthly_trends = weather_data_cleaned.groupby(weather_data_cleaned['DATE'].dt.mo
 }).reset_index()
 monthly_trends.columns = ['Month', 'Avg Max Temp (°F)', 'Avg Min Temp (°F)', 'Total Precipitation (inches)']
 print(monthly_trends)
+
+
+# seasonal insights
+def assign_season(month):
+    if month in [12, 1, 2]:
+        return 'Winter'
+    elif month in [3, 4, 5]:
+        return 'Spring'
+    elif month in [6, 7, 8]:
+        return 'Summer'
+    else:
+        return 'Fall'
+
+weather_data_cleaned['Season'] = weather_data_cleaned['DATE'].dt.month.apply(assign_season)
+
+# summary statistics for seasonal data
+seasonal_data = weather_data_cleaned.groupby('Season').agg({
+    'TMAX': 'mean',
+    'TMIN': 'mean',
+    'PRCP': 'sum'
+}).reset_index()
+print(seasonal_data)
+
+# visualize seasonal temperature averages
+plt.figure(figsize=(10, 6))
+sns.barplot(data=seasonal_data, x='Season', y='TMAX', color='red', label='Avg Max Temp')
+sns.barplot(data=seasonal_data, x='Season', y='TMIN', color='blue', label='Avg Min Temp', alpha=0.7)
+plt.title('Seasonal Temperature Averages')
+plt.ylabel('Temperature (°F)')
+plt.xlabel('Season')
+plt.legend()
+plt.show()
+
+
+# extremes
+hottest_day = weather_data_cleaned.loc[weather_data_cleaned['TMAX'].idxmax()]
+coldest_day = weather_data_cleaned.loc[weather_data_cleaned['TMIN'].idxmin()]
+wettest_day = weather_data_cleaned.loc[weather_data_cleaned['PRCP'].idxmax()]
+
+print("Hottest Day:", hottest_day)
+print("Coldest Day:", coldest_day)
+print("Wettest Day:", wettest_day)
+
+
