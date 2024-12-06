@@ -2,16 +2,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+# load and preprocess weather data
 weather_data = pd.read_csv('va-weather-data.csv')
-weather_data['DATE'] = pd.to_datetime(weather_data['DATE'])
+weather_data['DATE'] = pd.to_datetime(weather_data['DATE'])  # Convert DATE to datetime format
+# select relevant columns and remove rows with missing values
 weather_data_cleaned = weather_data[['DATE', 'TMAX', 'TMIN', 'PRCP', 'AWND']].dropna()
+# calculate daily temp range
 weather_data_cleaned['TEMP_RANGE'] = weather_data_cleaned['TMAX'] - weather_data_cleaned['TMIN']
 
-plt.figure().clear()
-plt.clf()
-plt.close('all')
 
-# visualize min and max temps over time
+
+# visualize daily maximum and minimum temperatures to show temp patterns over time
 weather_data_cleaned = weather_data_cleaned.sort_values('DATE')
 plt.figure(figsize=(12, 6))
 plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['TMAX'], label='Max Temperature (TMAX)', color='red', alpha=0.7)
@@ -22,7 +23,7 @@ plt.ylabel('Temperature (°F)')
 plt.legend()
 plt.show()
 
-# visualize precipitation levels over time
+# visualize daily precipitation levels to show precipitation patterns over time
 plt.figure(figsize=(12, 6))
 plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['PRCP'], label='Precipitation (PRCP)', color='green', alpha=0.7)
 plt.title('Daily Precipitation Levels Over Time')
@@ -40,8 +41,7 @@ monthly_trends = weather_data_cleaned.groupby(weather_data_cleaned['DATE'].dt.mo
 monthly_trends.columns = ['Month', 'Avg Max Temp (°F)', 'Avg Min Temp (°F)', 'Total Precipitation (inches)']
 print(monthly_trends)
 
-
-# seasonal insights
+# seasonal analysis
 def assign_season(month):
     if month in [12, 1, 2]:
         return 'Winter'
@@ -52,9 +52,10 @@ def assign_season(month):
     else:
         return 'Fall'
 
+# add season column to the data
 weather_data_cleaned['Season'] = weather_data_cleaned['DATE'].dt.month.apply(assign_season)
 
-# summary statistics for seasonal data
+# summary statistics for seasonal temperature and precipitation
 seasonal_data = weather_data_cleaned.groupby('Season').agg({
     'TMAX': 'mean',
     'TMIN': 'mean',
@@ -72,8 +73,7 @@ plt.xlabel('Season')
 plt.legend()
 plt.show()
 
-
-# extremes
+# identify the extremes
 hottest_day = weather_data_cleaned.loc[weather_data_cleaned['TMAX'].idxmax()]
 coldest_day = weather_data_cleaned.loc[weather_data_cleaned['TMIN'].idxmin()]
 wettest_day = weather_data_cleaned.loc[weather_data_cleaned['PRCP'].idxmax()]
@@ -82,4 +82,35 @@ print("Hottest Day:", hottest_day)
 print("Coldest Day:", coldest_day)
 print("Wettest Day:", wettest_day)
 
+# correlation analysis
+correlation_matrix = weather_data_cleaned[['TMAX', 'TMIN', 'PRCP', 'AWND']].corr()
+plt.figure(figsize=(10, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', vmin=-1, vmax=1)
+plt.title('Correlation Matrix of Weather Variables')
+plt.show()
 
+# visualize relationships between weather variables
+fig, axes = plt.subplots(2, 2, figsize=(15, 15))
+fig.suptitle('Relationships Between Weather Variables')
+
+# generate scatter plots for different combinations of weather variables
+sns.scatterplot(data=weather_data_cleaned, x='TMAX', y='TMIN', ax=axes[0,0], alpha=0.5)
+axes[0,0].set_title('Max vs Min Temperature')
+
+sns.scatterplot(data=weather_data_cleaned, x='TMAX', y='PRCP', ax=axes[0,1], alpha=0.5)
+axes[0,1].set_title('Max Temperature vs Precipitation')
+
+sns.scatterplot(data=weather_data_cleaned, x='AWND', y='PRCP', ax=axes[1,0], alpha=0.5)
+axes[1,0].set_title('Wind Speed vs Precipitation')
+
+sns.scatterplot(data=weather_data_cleaned, x='TMAX', y='AWND', ax=axes[1,1], alpha=0.5)
+axes[1,1].set_title('Max Temperature vs Wind Speed')
+
+plt.tight_layout()
+plt.show()
+
+# display top 3 strongest correlations
+print("\nStrongest Correlations:")
+correlations = correlation_matrix.unstack()
+sorted_correlations = correlations[correlations != 1.0].sort_values(ascending=False)
+print(sorted_correlations[:3])
