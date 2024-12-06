@@ -1,0 +1,41 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+weather_data = pd.read_csv('va-weather-data.csv')
+weather_data['DATE'] = pd.to_datetime(weather_data['DATE'])
+weather_data_cleaned = weather_data[['DATE', 'TMAX', 'TMIN', 'PRCP', 'AWND']].dropna()
+weather_data_cleaned['TEMP_RANGE'] = weather_data_cleaned['TMAX'] - weather_data_cleaned['TMIN']
+
+plt.figure().clear()
+plt.clf()
+plt.close('all')
+
+# plot min and max temps over time
+weather_data_cleaned = weather_data_cleaned.sort_values('DATE')
+plt.figure(figsize=(12, 6))
+plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['TMAX'], label='Max Temperature (TMAX)', color='red', alpha=0.7)
+plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['TMIN'], label='Min Temperature (TMIN)', color='blue', alpha=0.7)
+plt.title('Daily Maximum and Minimum Temperatures Over Time')
+plt.xlabel('Date')
+plt.ylabel('Temperature (°F)')
+plt.legend()
+plt.show()
+
+# plot precipitation levels over time
+plt.figure(figsize=(12, 6))
+plt.plot(weather_data_cleaned['DATE'], weather_data_cleaned['PRCP'], label='Precipitation (PRCP)', color='green', alpha=0.7)
+plt.title('Daily Precipitation Levels Over Time')
+plt.xlabel('Date')
+plt.ylabel('Precipitation (inches)')
+plt.legend()
+plt.show()
+
+# summary statistics for temperature and precipitation
+monthly_trends = weather_data_cleaned.groupby(weather_data_cleaned['DATE'].dt.month).agg({
+    'TMAX': 'mean',
+    'TMIN': 'mean',
+    'PRCP': 'sum'
+}).reset_index()
+monthly_trends.columns = ['Month', 'Avg Max Temp (°F)', 'Avg Min Temp (°F)', 'Total Precipitation (inches)']
+print(monthly_trends)
